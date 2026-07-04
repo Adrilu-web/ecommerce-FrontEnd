@@ -61,4 +61,4 @@ El sistema cuenta con una precarga automática en el Backend para llenar la base
 
 ### 1. Clonar el repositorio
 ```bash
-git clone [https://github.com/TU_USUARIO/TU_REPOSITORIO.git](https://github.com/TU_USUARIO/TU_REPOSITORIO.git)
+git clone [https://github.com/Adrilu-web/ecommerce-FrontEnd.git](https://github.com/Adrilu-web/ecommerce-FrontEnd.git)
