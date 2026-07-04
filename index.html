@@ -2,7 +2,7 @@
 <html lang="es">
 <head>
     <meta charset="UTF-8">
-    <title>Frutos de la Tierra</title>
+    <title>Ecommerce Mejorado</title>
     <style>
         body { font-family: Arial; margin: 20px; background: #f5f5f5; }
         h1 { text-align: center; margin-bottom: 20px; }
@@ -18,6 +18,41 @@
             color: white;
         }
         .tabs button.active { background: #0056b3; }
+
+        /* Estilo para el indicador numérico de la pestaña */
+        .badge-carrito {
+            background: #dc3545;
+            color: white;
+            padding: 2px 6px;
+            border-radius: 50%;
+            font-size: 0.85em;
+            font-weight: bold;
+            margin-left: 5px;
+        }
+
+        /* Contenedor fijo para los mensajes flotantes (Toasts) */
+        #toastContainer {
+            position: fixed;
+            bottom: 20px;
+            right: 20px;
+            z-index: 9999;
+        }
+        .toast-notificacion {
+            background: #28a745;
+            color: white;
+            padding: 12px 20px;
+            border-radius: 6px;
+            margin-top: 10px;
+            font-weight: bold;
+            box-shadow: 0 4px 10px rgba(0,0,0,0.2);
+            animation: aparecerYDesvanecer 2.5s forwards;
+        }
+        @keyframes aparecerYDesvanecer {
+            0% { opacity: 0; transform: translateY(20px); }
+            10% { opacity: 1; transform: translateY(0); }
+            80% { opacity: 1; }
+            100% { opacity: 0; transform: translateY(-20px); }
+        }
 
         .section { display: none; }
         .section.active { display: block; }
@@ -189,13 +224,17 @@
 </head>
 <body>
 
-<h1>Frutos de la Tierra</h1>
+<h1>Ecommerce Mejorado</h1>
 
 <div class="tabs">
     <button id="tabProductos" class="active" onclick="mostrarSeccion('productosSection')">Productos</button>
     <button id="tabCategorias" onclick="mostrarSeccion('categoriasSection')">Categorías</button>
-    <button id="tabCarrito" onclick="mostrarSeccion('carritoSection')">Carrito</button>
+    <!-- MODIFICACIÓN: Se añade el badge numérico al lado del texto "Carrito" -->
+    <button id="tabCarrito" onclick="mostrarSeccion('carritoSection')">Carrito<span id="carritoContador" class="badge-carrito">0</span></button>
 </div>
+
+<!-- NUEVO CONTENEDOR FANTASMA PARA LOS MENSAJES TOAST -->
+<div id="toastContainer"></div>
 
 <!-- SECCIÓN PRODUCTOS: listado + ABM debajo -->
 <div id="productosSection" class="section active">
@@ -333,6 +372,21 @@
         }
     }
 
+    // NUEVA FUNCIÓN: Dispara un cartel flotante animado que se borra solo tras 2.5s
+    function lanzarToastNotificacion(mensaje) {
+        const contenedor = document.getElementById("toastContainer");
+        const div = document.createElement("div");
+        div.className = "toast-notificacion";
+        div.textContent = mensaje;
+        
+        contenedor.appendChild(div);
+        
+        // Lo removemos del DOM cuando termina la animación para no saturar memoria
+        setTimeout(() => {
+            div.remove();
+        }, 2500);
+    }
+
     function mostrarMensaje(msg, ok = false) {
         const div = document.getElementById("mensaje");
         div.textContent = msg;
@@ -439,14 +493,11 @@
             const grid = document.getElementById(`cat-${cat}`);
 
             categorias[cat].forEach(p => {
-                // MODIFICACIÓN STOCK: Evaluación lógica para habilitar o deshabilitar el botón de compra
                 let botonHtml = "";
                 
                 if (p.stock > 0) {
-                    // Producto disponible: botón normal funcional
                     botonHtml = `<button onclick="agregarProducto(${p.id})">Agregar al carrito</button>`;
                 } else {
-                    // Producto agotado: botón gris e inhabilitado (disabled)
                     botonHtml = `<button disabled style="background-color: #6c757d; cursor: not-allowed;">Sin Stock</button>`;
                 }
 
@@ -517,10 +568,30 @@
         });
     }
 
+    // MODIFICACIÓN: Al agregar un producto lanzamos el Toast y mandamos a recontar los ítems
     async function agregarProducto(productoId) {
         if (!carritoId) await crearCarrito();
         await fetch(`${API}/carritos/${carritoId}/productos/${productoId}`, { method: "POST" });
-        cargarCarrito();
+        
+        lanzarToastNotificacion("¡Producto añadido al carrito con éxito! 🍏");
+        actualizarContadorBadge(); // Actualiza el circulito rojo sin cambiar de pestaña
+    }
+
+    // NUEVA FUNCIÓN: Consulta el backend para saber la cantidad total de artículos y plasmarla en la pestaña
+    async function actualizarContadorBadge() {
+        if (!carritoId) return;
+        try {
+            const res = await fetch(`${API}/carritos/${carritoId}`);
+            if (!res.ok) return;
+            const carrito = await res.json();
+            
+            let cantidadTotal = 0;
+            carrito.productos.forEach(item => {
+                cantidadTotal += item.cantidad; // Sumamos la cantidad de cada fila
+            });
+            
+            document.getElementById("carritoContador").textContent = cantidadTotal;
+        } catch (e) {}
     }
 
     async function cargarCarrito() {
@@ -537,9 +608,11 @@
             }
             const carrito = await res.json();
             let total = 0;
+            let cantidadTotal = 0;
 
             carrito.productos.forEach(item => {
                 total += item.producto.precio * item.cantidad;
+                cantidadTotal += item.cantidad;
                 cont.innerHTML += `
                     <div class="carrito-item">
                         <img src="${item.producto.imagenUrl || ''}">
@@ -554,6 +627,7 @@
             });
 
             document.getElementById("totalCarrito").textContent = total.toFixed(2);
+            document.getElementById("carritoContador").textContent = cantidadTotal; // Mantiene sincronizado el badge
         } catch (e) {
             cont.innerHTML = "<p>Error de conexión al cargar carrito</p>";
         }
@@ -563,6 +637,7 @@
         if (!confirm("¿Estás seguro de que querés vaciar todos los productos del carrito?")) return;
         await fetch(`${API}/carritos/${carritoId}/vaciar`, { method: "DELETE" });
         cargarCarrito();
+        actualizarContadorBadge();
     }
 
     async function eliminarCarrito() {
@@ -571,6 +646,7 @@
         carritoId = null;
         document.getElementById("carrito").innerHTML = "";
         document.getElementById("totalCarrito").textContent = "0.00";
+        document.getElementById("carritoContador").textContent = "0";
         await crearCarrito();
     }
 
@@ -823,7 +899,6 @@
     cargarCategorias();
     cargarProductos();
 
-    // Soporte para ejecutar la búsqueda al presionar "Enter" en el buscador
     document.getElementById("searchProductoInput").addEventListener("keypress", function(event) {
         if (event.key === "Enter") {
             buscarProductosPorNombre();
