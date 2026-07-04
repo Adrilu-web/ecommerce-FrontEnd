@@ -1,0 +1,835 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <title>Frutos de la Tierra</title>
+    <style>
+        body { font-family: Arial; margin: 20px; background: #f5f5f5; }
+        h1 { text-align: center; margin-bottom: 20px; }
+
+        .tabs { margin-bottom: 20px; }
+        .tabs button {
+            padding: 10px 15px;
+            margin-right: 10px;
+            border: none;
+            border-radius: 6px;
+            cursor: pointer;
+            background: #007bff;
+            color: white;
+        }
+        .tabs button.active { background: #0056b3; }
+
+        .section { display: none; }
+        .section.active { display: block; }
+
+        /* Estilos para las barras de búsqueda */
+        .search-container {
+            background: white;
+            padding: 15px;
+            border-radius: 8px;
+            box-shadow: 0 2px 6px rgba(0,0,0,0.1);
+            margin-bottom: 20px;
+            display: flex;
+            gap: 10px;
+            align-items: center;
+        }
+        .search-container input {
+            flex: 1;
+            padding: 10px;
+            border: 1px solid #ddd;
+            border-radius: 6px;
+            font-size: 1em;
+        }
+        .search-container button {
+            padding: 10px 15px;
+            border: none;
+            border-radius: 6px;
+            cursor: pointer;
+            background: #17a2b8;
+            color: white;
+            font-weight: bold;
+        }
+        .search-container button.reset-btn {
+            background: #6c757d;
+        }
+
+        .categoria { margin-bottom: 40px; }
+        .categoria h2 {
+            background: #333; color: white;
+            padding: 10px; border-radius: 6px;
+        }
+        .productos-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+            gap: 20px;
+        }
+        .card {
+            background: white; border-radius: 8px;
+            padding: 15px; box-shadow: 0 2px 6px rgba(0,0,0,0.15);
+            text-align: center;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+        }
+        
+        .card img {
+            max-width: 90%; 
+            height: 130px;
+            object-fit: contain; 
+            border-radius: 6px;
+            margin: 0 auto 10px auto;
+            background: #fcfcfc;
+        }
+        
+        .card button {
+            margin-top: 10px; padding: 8px 12px;
+            background: #007bff; color: white;
+            border: none; border-radius: 6px; cursor: pointer;
+        }
+        .card button:hover { background: #0056b3; }
+
+        #carrito {
+            background: #fff; padding: 20px;
+            border-radius: 8px; box-shadow: 0 2px 6px rgba(0,0,0,0.15);
+            margin-top: 20px;
+        }
+        .carrito-item {
+            display: flex; align-items: center;
+            gap: 15px; margin-bottom: 15px;
+            border-bottom: 1px solid #ddd; padding-bottom: 10px;
+        }
+        .carrito-item img {
+            width: 80px; height: 80px;
+            object-fit: cover; border-radius: 6px;
+        }
+
+        .carrito-actions { margin-top: 20px; }
+        .carrito-actions button {
+            margin-right: 10px; padding: 10px 15px;
+            border: none; border-radius: 6px; cursor: pointer;
+        }
+        .vaciar { background: #ffc107; }
+        .eliminar { background: #dc3545; color: white; }
+
+        /* ABM GRID */
+        #crud, #crudCategorias {
+            background: #fff; padding: 20px;
+            border-radius: 8px; box-shadow: 0 2px 6px rgba(0,0,0,0.15);
+            margin-top: 30px;
+        }
+
+        .crud-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 25px;
+            margin-top: 20px;
+        }
+
+        .crud-card {
+            background: #fafafa;
+            padding: 15px;
+            border-radius: 8px;
+            box-shadow: 0 2px 6px rgba(0,0,0,0.1);
+            display: flex;
+            flex-direction: column;
+        }
+
+        .crud-card input, .crud-card select, .crud-card textarea {
+            width: 100%;
+            padding: 8px;
+            margin-bottom: 10px;
+            box-sizing: border-box;
+            font-family: Arial, sans-serif;
+        }
+
+        .crear { background: #28a745; color: white; }
+        .editar { background: #17a2b8; color: white; }
+        .baja { background: #dc3545; color: white; }
+
+        .preview-box {
+            margin-top: 15px;
+            padding: 10px;
+            background: #fff;
+            border: 1px solid #ddd;
+            border-radius: 6px;
+            text-align: center;
+        }
+        .preview-box img {
+            max-width: 90%;
+            height: 110px;
+            object-fit: contain;
+            border-radius: 4px;
+            margin-bottom: 8px;
+            background: #f9f9f9;
+        }
+        .preview-box h4 {
+            margin: 5px 0;
+            color: #333;
+        }
+
+        #mensaje, #mensajeCat {
+            margin-top: 20px;
+            padding: 12px;
+            font-weight: bold;
+            border-radius: 6px;
+            text-align: center;
+            display: none;
+        }
+        .msg-error {
+            background: #f8d7da;
+            color: #842029;
+            border: 1px solid #f5c2c7;
+        }
+        .msg-ok {
+            background: #d1e7dd;
+            color: #0f5132;
+            border: 1px solid #badbcc;
+        }
+    </style>
+</head>
+<body>
+
+<h1>Frutos de la Tierra</h1>
+
+<div class="tabs">
+    <button id="tabProductos" class="active" onclick="mostrarSeccion('productosSection')">Productos</button>
+    <button id="tabCategorias" onclick="mostrarSeccion('categoriasSection')">Categorías</button>
+    <button id="tabCarrito" onclick="mostrarSeccion('carritoSection')">Carrito</button>
+</div>
+
+<!-- SECCIÓN PRODUCTOS: listado + ABM debajo -->
+<div id="productosSection" class="section active">
+    
+    <!-- BUSCADOR DE PRODUCTOS POR NOMBRE -->
+    <div class="search-container">
+        <input id="searchProductoInput" placeholder="Buscar producto por nombre y presionar Enter...">
+        <button onclick="buscarProductosPorNombre()">Buscar</button>
+        <button class="reset-btn" onclick="restablecerProductos()">Ver todos</button>
+    </div>
+
+    <!-- LISTADO DE PRODUCTOS -->
+    <div id="productos"></div>
+
+    <!-- GESTIÓN DE PRODUCTOS -->
+    <div id="crud">
+        <h2>Gestión de Productos</h2>
+
+        <div class="crud-grid">
+            <!-- CREAR -->
+            <div class="crud-card">
+                <h3>Crear producto</h3>
+                <input id="cNombre" placeholder="Nombre">
+                <input id="cPrecio" placeholder="Precio" type="number">
+                <input id="cStock" placeholder="Stock" type="number">
+                <input id="cImagen" placeholder="URL de imagen">
+                <select id="cCategoria"></select>
+                <button class="crear" onclick="crearProducto()">Crear</button>
+            </div>
+
+            <!-- EDITAR -->
+            <div class="crud-card">
+                <h3>Editar producto</h3>
+                <input id="eId" placeholder="ID producto" type="number">
+                <button class="editar" onclick="cargarProductoParaEditar()">Buscar</button>
+                <input id="eNombre" placeholder="Nuevo nombre">
+                <input id="ePrecio" placeholder="Nuevo precio" type="number">
+                <input id="eStock" placeholder="Nuevo stock" type="number">
+                <input id="eImagen" placeholder="Nueva URL imagen">
+                <select id="eCategoria"></select>
+                <button class="editar" onclick="editarProducto()">Modificar</button>
+            </div>
+
+            <!-- BAJA -->
+            <div class="crud-card">
+                <h3>Dar de baja producto</h3>
+                <input id="bId" placeholder="ID producto" type="number">
+                <button class="baja" onclick="mostrarProductoParaBaja()">Ver producto</button>
+                <button class="baja" onclick="bajaProducto()">Eliminar</button>
+                <div id="bajaPreview"></div>
+            </div>
+        </div>
+        <div id="mensaje"></div>
+    </div>
+</div>
+
+<!-- GESTIÓN DE CATEGORÍAS -->
+<div id="categoriasSection" class="section">
+    
+    <!-- BUSCADOR FILTRADO DE CATEGORÍAS -->
+    <div class="search-container">
+        <input id="searchCategoriaInput" onkeyup="filtrarCategoriasEnTiempoReal()" placeholder="Filtrar categorías por nombre en tiempo real...">
+    </div>
+
+    <div id="crudCategorias">
+        <h2>Gestión de Categorías</h2>
+        
+        <div class="crud-grid">
+            <!-- CREAR CATEGORÍA -->
+            <div class="crud-card">
+                <h3>Crear categoría</h3>
+                <input id="catCNombre" placeholder="Nombre de categoría">
+                <textarea id="catCDescripcion" placeholder="Descripción de la categoría" rows="3"></textarea>
+                <button class="crear" onclick="crearCategoria()">Crear</button>
+            </div>
+
+            <!-- EDITAR CATEGORÍA -->
+            <div class="crud-card">
+                <h3>Editar categoría</h3>
+                <input id="catEId" placeholder="ID categoría" type="number">
+                <button class="editar" onclick="cargarCategoriaParaEditar()">Buscar</button>
+                <input id="catENombre" placeholder="Nuevo nombre">
+                <textarea id="catEDescripcion" placeholder="Nueva descripción" rows="3"></textarea>
+                <button class="editar" onclick="editarCategoria()">Modificar</button>
+            </div>
+
+            <!-- BAJA CATEGORÍA -->
+            <div class="crud-card">
+                <h3>Dar de baja categoría</h3>
+                <input id="catBId" placeholder="ID categoría" type="number">
+                <button class="baja" onclick="mostrarCategoriaParaBaja()">Ver categoría</button>
+                <button class="baja" onclick="bajaCategoria()">Eliminar</button>
+                <div id="catBajaPreview" class="preview-box" style="display:none;"></div>
+            </div>
+        </div>
+        <div id="mensajeCat"></div>
+    </div>
+</div>
+
+<!-- SECCIÓN CARRITO -->
+<div id="carritoSection" class="section">
+    <h2>Carrito — Total: $<span id="totalCarrito">0.00</span></h2>
+    <div id="carrito"></div>
+
+    <div class="carrito-actions">
+        <button class="vaciar" onclick="vaciarCarrito()">Vaciar carrito</button>
+        <button class="eliminar" onclick="eliminarCarrito()">Eliminar carrito</button>
+    </div>
+</div>
+
+<script>
+    const API = "http://localhost:8080";
+    let carritoId = null;
+
+    function mostrarSeccion(id) {
+        document.getElementById("productosSection").classList.remove("active");
+        document.getElementById("categoriasSection").classList.remove("active");
+        document.getElementById("carritoSection").classList.remove("active");
+        document.getElementById(id).classList.add("active");
+
+        document.getElementById("tabProductos").classList.remove("active");
+        document.getElementById("tabCategorias").classList.remove("active");
+        document.getElementById("tabCarrito").classList.remove("active");
+
+        if (id === "productosSection") {
+            document.getElementById("tabProductos").classList.add("active");
+            cargarProductos();
+        } else if (id === "categoriasSection") {
+            document.getElementById("tabCategorias").classList.add("active");
+            mostrarMensajeCat("");
+            document.getElementById("searchCategoriaInput").value = "";
+        } else {
+            document.getElementById("tabCarrito").classList.add("active");
+            cargarCarrito();
+        }
+    }
+
+    function mostrarMensaje(msg, ok = false) {
+        const div = document.getElementById("mensaje");
+        div.textContent = msg;
+        div.classList.remove("msg-error", "msg-ok");
+        if (!msg) {
+            div.style.display = "none";
+            return;
+        }
+        div.style.display = "block";
+        div.classList.add(ok ? "msg-ok" : "msg-error");
+    }
+
+    function mostrarMensajeCat(msg, ok = false) {
+        const div = document.getElementById("mensajeCat");
+        div.textContent = msg;
+        div.classList.remove("msg-error", "msg-ok");
+        if (!msg) {
+            div.style.display = "none";
+            return;
+        }
+        div.style.display = "block";
+        div.classList.add(ok ? "msg-ok" : "msg-error");
+    }
+
+    function limpiarFormulario(tipo) {
+        if (tipo === 'crear') {
+            document.getElementById("cNombre").value = "";
+            document.getElementById("cPrecio").value = "";
+            document.getElementById("cStock").value = "";
+            document.getElementById("cImagen").value = "";
+        } else if (tipo === 'editar') {
+            document.getElementById("eId").value = "";
+            document.getElementById("eNombre").value = "";
+            document.getElementById("ePrecio").value = "";
+            document.getElementById("eStock").value = "";
+            document.getElementById("eImagen").value = "";
+        } else if (tipo === 'baja') {
+            document.getElementById("bId").value = "";
+            document.getElementById("bajaPreview").innerHTML = "";
+        } else if (tipo === 'catCrear') {
+            document.getElementById("catCNombre").value = "";
+            document.getElementById("catCDescripcion").value = "";
+        } else if (tipo === 'catEditar') {
+            document.getElementById("catEId").value = "";
+            document.getElementById("catENombre").value = "";
+            document.getElementById("catEDescripcion").value = "";
+        } else if (tipo === 'catBaja') {
+            document.getElementById("catBId").value = "";
+            const box = document.getElementById("catBajaPreview");
+            box.innerHTML = "";
+            box.style.display = "none";
+        }
+    }
+
+    async function cargarCategorias() {
+        try {
+            const res = await fetch(`${API}/categorias`);
+            if (!res.ok) return;
+            const categorias = await res.json();
+
+            const cSel = document.getElementById("cCategoria");
+            const eSel = document.getElementById("eCategoria");
+
+            cSel.innerHTML = "";
+            eSel.innerHTML = "";
+
+            categorias.forEach(cat => {
+                const opt = `<option value="${cat.id}">${cat.nombre}</option>`;
+                cSel.innerHTML += opt;
+                eSel.innerHTML += opt;
+            });
+        } catch (e) {}
+    }
+
+    async function crearCarrito() {
+        const res = await fetch(`${API}/carritos`, { method: "POST" });
+        const carrito = await res.json();
+        carritoId = carrito.id;
+    }
+
+    function renderizarEstructuraProductos(productos) {
+        const cont = document.getElementById("productos");
+        cont.innerHTML = "";
+
+        if (productos.length === 0) {
+            cont.innerHTML = "<p style='text-align:center; font-weight:bold;'>No se encontraron productos.</p>";
+            return;
+        }
+
+        const categorias = {};
+        productos.forEach(p => {
+            const nombreCat = p.categoria?.nombre || "Sin categoría";
+            if (!categorias[nombreCat]) categorias[nombreCat] = [];
+            categorias[nombreCat].push(p);
+        });
+
+        Object.keys(categorias).forEach(cat => {
+            cont.innerHTML += `
+                <div class="categoria" id="section-cat-${cat}">
+                    <h2>${cat}</h2>
+                    <div class="productos-grid" id="cat-${cat}"></div>
+                </div>
+            `;
+            const grid = document.getElementById(`cat-${cat}`);
+
+            categorias[cat].forEach(p => {
+                // MODIFICACIÓN STOCK: Evaluación lógica para habilitar o deshabilitar el botón de compra
+                let botonHtml = "";
+                
+                if (p.stock > 0) {
+                    // Producto disponible: botón normal funcional
+                    botonHtml = `<button onclick="agregarProducto(${p.id})">Agregar al carrito</button>`;
+                } else {
+                    // Producto agotado: botón gris e inhabilitado (disabled)
+                    botonHtml = `<button disabled style="background-color: #6c757d; cursor: not-allowed;">Sin Stock</button>`;
+                }
+
+                grid.innerHTML += `
+                    <div class="card">
+                        <img src="${p.imagenUrl || ''}">
+                        <h3>${p.nombre}</h3>
+                        <p>ID: ${p.id}</p>
+                        <p><small>Stock disponible: ${p.stock}</small></p>
+                        <p><strong>$${p.precio}</strong></p>
+                        ${botonHtml}
+                    </div>
+                `;
+            });
+        });
+    }
+
+    async function cargarProductos() {
+        try {
+            const res = await fetch(`${API}/productos`);
+            if (!res.ok) {
+                document.getElementById("productos").innerHTML = "<p>Error al cargar productos</p>";
+                return;
+            }
+            const productos = await res.json();
+            renderizarEstructuraProductos(productos);
+        } catch (e) {
+            document.getElementById("productos").innerHTML = "<p>Error de conexión al cargar productos</p>";
+        }
+    }
+
+    async function buscarProductosPorNombre() {
+        const nombre = document.getElementById("searchProductoInput").value.trim();
+        if (!nombre) {
+            cargarProductos();
+            return;
+        }
+
+        try {
+            const res = await fetch(`${API}/productos/nombre/${nombre}`);
+            if (!res.ok) {
+                document.getElementById("productos").innerHTML = "<p style='text-align:center;'>No se encontraron resultados para la búsqueda.</p>";
+                return;
+            }
+            const productos = await res.json();
+            renderizarEstructuraProductos(productos);
+        } catch (e) {
+            document.getElementById("productos").innerHTML = "<p>Error al buscar productos</p>";
+        }
+    }
+
+    function restablecerProductos() {
+        document.getElementById("searchProductoInput").value = "";
+        cargarProductos();
+    }
+
+    function filtrarCategoriasEnTiempoReal() {
+        const texto = document.getElementById("searchCategoriaInput").value.toLowerCase();
+        const bloquesCategoria = document.querySelectorAll(".categoria");
+
+        bloquesCategoria.forEach(bloque => {
+            const nombreCategoria = bloque.querySelector("h2").textContent.toLowerCase();
+            if (nombreCategoria.includes(texto)) {
+                bloque.style.display = "block";
+            } else {
+                bloque.style.display = "none";
+            }
+        });
+    }
+
+    async function agregarProducto(productoId) {
+        if (!carritoId) await crearCarrito();
+        await fetch(`${API}/carritos/${carritoId}/productos/${productoId}`, { method: "POST" });
+        cargarCarrito();
+    }
+
+    async function cargarCarrito() {
+        if (!carritoId) return;
+
+        const cont = document.getElementById("carrito");
+        cont.innerHTML = "";
+
+        try {
+            const res = await fetch(`${API}/carritos/${carritoId}`);
+            if (!res.ok) {
+                cont.innerHTML = "<p>Error al cargar carrito</p>";
+                return;
+            }
+            const carrito = await res.json();
+            let total = 0;
+
+            carrito.productos.forEach(item => {
+                total += item.producto.precio * item.cantidad;
+                cont.innerHTML += `
+                    <div class="carrito-item">
+                        <img src="${item.producto.imagenUrl || ''}">
+                        <div>
+                            <h4>${item.producto.nombre}</h4>
+                            <p>ID: ${item.producto.id}</p>
+                            <p>Precio: $${item.producto.precio}</p>
+                            <p>Cantidad: ${item.cantidad}</p>
+                        </div>
+                    </div>
+                `;
+            });
+
+            document.getElementById("totalCarrito").textContent = total.toFixed(2);
+        } catch (e) {
+            cont.innerHTML = "<p>Error de conexión al cargar carrito</p>";
+        }
+    }
+
+    async function vaciarCarrito() {
+        if (!confirm("¿Estás seguro de que querés vaciar todos los productos del carrito?")) return;
+        await fetch(`${API}/carritos/${carritoId}/vaciar`, { method: "DELETE" });
+        cargarCarrito();
+    }
+
+    async function eliminarCarrito() {
+        if (!confirm("¿Estás seguro de que querés eliminar el carrito por completo?")) return;
+        await fetch(`${API}/carritos/${carritoId}`, { method: "DELETE" });
+        carritoId = null;
+        document.getElementById("carrito").innerHTML = "";
+        document.getElementById("totalCarrito").textContent = "0.00";
+        await crearCarrito();
+    }
+
+    // ABM PRODUCTOS
+
+    async function crearProducto() {
+        mostrarMensaje("");
+        const nuevo = {
+            nombre: document.getElementById("cNombre").value,
+            precio: parseFloat(document.getElementById("cPrecio").value),
+            stock: parseInt(document.getElementById("cStock").value),
+            imagenUrl: document.getElementById("cImagen").value,
+            categoria: { id: parseInt(document.getElementById("cCategoria").value) }
+        };
+
+        const res = await fetch(`${API}/productos`, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify(nuevo)
+        });
+
+        if (!res.ok) {
+            mostrarMensaje("Error al crear: " + await res.text());
+        } else {
+            mostrarMensaje("Producto creado correctamente", true);
+            limpiarFormulario('crear');
+            cargarProductos();
+        }
+    }
+
+    async function cargarProductoParaEditar() {
+        mostrarMensaje("");
+        const id = document.getElementById("eId").value;
+        const res = await fetch(`${API}/productos/${id}`);
+
+        if (!res.ok) {
+            mostrarMensaje("Producto no encontrado");
+            return;
+        }
+
+        const p = await res.json();
+        document.getElementById("eNombre").value = p.nombre;
+        document.getElementById("ePrecio").value = p.precio;
+        document.getElementById("eStock").value = p.stock;
+        document.getElementById("eImagen").value = p.imagenUrl || "";
+        document.getElementById("eCategoria").value = p.categoria?.id || "";
+    }
+
+    async function editarProducto() {
+        mostrarMensaje("");
+        const id = document.getElementById("eId").value;
+        const datos = {
+            nombre: document.getElementById("eNombre").value,
+            precio: parseFloat(document.getElementById("ePrecio").value),
+            stock: parseInt(document.getElementById("eStock").value),
+            imagenUrl: document.getElementById("eImagen").value,
+            categoria: { id: parseInt(document.getElementById("eCategoria").value) }
+        };
+
+        const res = await fetch(`${API}/productos/${id}`, {
+            method: "PUT",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify(datos)
+        });
+
+        if (!res.ok) {
+            mostrarMensaje("Error al modificar: " + await res.text());
+        } else {
+            mostrarMensaje("Producto modificado correctamente", true);
+            limpiarFormulario('editar');
+            cargarProductos();
+        }
+    }
+
+    async function mostrarProductoParaBaja() {
+        mostrarMensaje("");
+        const previewCont = document.getElementById("bajaPreview");
+        previewCont.innerHTML = "";
+
+        const id = document.getElementById("bId").value;
+        const res = await fetch(`${API}/productos/${id}`);
+
+        if (!res.ok) {
+            mostrarMensaje("Producto no encontrado");
+            return;
+        }
+
+        const p = await res.json();
+        mostrarMensaje(`Producto listo para dar de baja: ID ${p.id} — ${p.nombre}`, true);
+
+        previewCont.innerHTML = `
+            <div class="preview-box">
+                <img src="${p.imagenUrl || ''}" alt="Foto del producto">
+                <h4>${p.nombre}</h4>
+                <p><small>Precio actual: $${p.precio}</small></p>
+            </div>
+        `;
+    }
+
+    async function bajaProducto() {
+        mostrarMensaje("");
+        const id = document.getElementById("bId").value;
+        if (!id) {
+            mostrarMensaje("Por favor, ingresá un ID de producto primero.");
+            return;
+        }
+
+        if (!confirm(`¿Estás completamente seguro de que querés borrar de forma permanente el producto con ID ${id}?`)) return;
+
+        const res = await fetch(`${API}/productos/${id}`, { method: "DELETE" });
+
+        if (!res.ok) {
+            mostrarMensaje("Error al eliminar: " + await res.text());
+        } else {
+            mostrarMensaje("Producto eliminado correctamente", true);
+            limpiarFormulario('baja');
+            cargarProductos();
+        }
+    }
+
+    // ABM CATEGORÍAS
+
+    async function crearCategoria() {
+        mostrarMensajeCat("");
+        const nueva = {
+            nombre: document.getElementById("catCNombre").value,
+            descripcion: document.getElementById("catCDescripcion").value
+        };
+
+        try {
+            const res = await fetch(`${API}/categorias`, {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify(nueva)
+            });
+
+            if (!res.ok) {
+                mostrarMensajeCat("Error al crear categoría: " + await res.text());
+            } else {
+                mostrarMensajeCat("Categoría creada correctamente", true);
+                limpiarFormulario('catCrear');
+                cargarCategorias();
+            }
+        } catch (e) {
+            mostrarMensajeCat("Error de conexión al servidor");
+        }
+    }
+
+    async function cargarCategoriaParaEditar() {
+        mostrarMensajeCat("");
+        const id = document.getElementById("catEId").value;
+        
+        try {
+            const res = await fetch(`${API}/categorias/${id}`);
+            if (!res.ok) {
+                mostrarMensajeCat("Categoría no encontrada");
+                return;
+            }
+            const cat = await res.json();
+            document.getElementById("catENombre").value = cat.nombre;
+            document.getElementById("catEDescripcion").value = cat.descripcion || "";
+        } catch (e) {
+            mostrarMensajeCat("Error de conexión");
+        }
+    }
+
+    async function editarCategoria() {
+        mostrarMensajeCat("");
+        const id = document.getElementById("catEId").value;
+        const datos = {
+            nombre: document.getElementById("catENombre").value,
+            descripcion: document.getElementById("catEDescripcion").value
+        };
+
+        try {
+            const res = await fetch(`${API}/categorias/${id}`, {
+                method: "PUT",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify(datos)
+            });
+
+            if (!res.ok) {
+                mostrarMensajeCat("Error al modificar: " + await res.text());
+            } else {
+                mostrarMensajeCat("Categoría modificada correctamente", true);
+                limpiarFormulario('catEditar');
+                cargarCategorias();
+                cargarProductos();
+            }
+        } catch (e) {
+            mostrarMensajeCat("Error de conexión");
+        }
+    }
+
+    async function mostrarCategoriaParaBaja() {
+        mostrarMensajeCat("");
+        const box = document.getElementById("catBajaPreview");
+        box.innerHTML = "";
+        box.style.display = "none";
+
+        const id = document.getElementById("catBId").value;
+        
+        try {
+            const res = await fetch(`${API}/categorias/${id}`);
+            if (!res.ok) {
+                mostrarMensajeCat("Categoría no encontrada");
+                return;
+            }
+            const cat = await res.json();
+            mostrarMensajeCat(`Categoría lista para baja: ID ${cat.id}`, true);
+            
+            box.innerHTML = `
+                <h4>${cat.nombre}</h4>
+                <p><small>${cat.descripcion || 'Sin descripción'}</small></p>
+            `;
+            box.style.display = "block";
+        } catch (e) {
+            mostrarMensajeCat("Error de conexión");
+        }
+    }
+
+    async function bajaCategoria() {
+        mostrarMensajeCat("");
+        const id = document.getElementById("catBId").value;
+        if (!id) {
+            mostrarMensajeCat("Por favor, ingresá un ID de categoría primero.");
+            return;
+        }
+
+        if (!confirm(`¿Estás seguro de que querés borrar la categoría con ID ${id}? Esto fallará si tiene productos enlazados.`)) return;
+
+        try {
+            const res = await fetch(`${API}/categorias/${id}`, { method: "DELETE" });
+
+            if (!res.ok) {
+                mostrarMensajeCat("No se puede eliminar: Esta categoría tiene productos asociados en el sistema.");
+            } else {
+                mostrarMensajeCat("Categoría eliminada correctamente", true);
+                limpiarFormulario('catBaja');
+                cargarCategorias();
+                cargarProductos();
+            }
+        } catch (e) {
+            mostrarMensajeCat("Error de conexión con el servidor");
+        }
+    }
+
+    // INICIO & CONFIGURACIONES DE EVENTOS
+    crearCarrito();
+    cargarCategorias();
+    cargarProductos();
+
+    // Soporte para ejecutar la búsqueda al presionar "Enter" en el buscador
+    document.getElementById("searchProductoInput").addEventListener("keypress", function(event) {
+        if (event.key === "Enter") {
+            buscarProductosPorNombre();
+        }
+    });
+</script>
+
+</body>
+</html>
